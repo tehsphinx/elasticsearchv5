@@ -1,13 +1,11 @@
 package elasticsearchv5
 
 import (
-	"log"
-
 	"context"
-
+	"log"
 	"strconv"
 
-	"git.raceresult.com/vendor/gopkg.in/olivere/elastic.v5"
+	"gopkg.in/olivere/elastic.v5"
 )
 
 func newSequence(client *Elastic) (*sequence, error) {

@@ -1,16 +1,14 @@
 package elasticsearchv5
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"context"
-
-	"encoding/json"
-
-	"git.raceresult.com/vendor/gopkg.in/olivere/elastic.v5"
+	"gopkg.in/olivere/elastic.v5"
 )
 
 // Elastic interface handles ElasticSearch connections. Manages connection internally.
