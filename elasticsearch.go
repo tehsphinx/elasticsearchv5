@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/olivere/elastic.v5"
+	elasticv5 "gopkg.in/olivere/elastic.v5"
 )
 
 // Elastic interface handles ElasticSearch connections. Manages connection internally.
@@ -17,14 +17,14 @@ type Elastic struct {
 	index             string
 	docType           string
 	mapping           string
-	bulk              *elastic.BulkService
+	bulk              *elasticv5.BulkService
 	bulkSize          int
 	ctx               context.Context
 	sequence          *sequence
 	sequenceCacheSize int
 }
 
-var client *elastic.Client
+var client *elasticv5.Client
 var url = []string{"http://127.0.0.1:9200"}
 
 // New creates a new Elastic client. All elastic clients use the same connection.
@@ -67,10 +67,10 @@ func (es *Elastic) StopBulk() error {
 
 // BulkIndex indexes a list of documents. Only works without id
 // NOT to be used with StartBulk / StopBulk
-func (es *Elastic) BulkIndex(docs []interface{}) (*elastic.BulkResponse, error) {
+func (es *Elastic) BulkIndex(docs []interface{}) (*elasticv5.BulkResponse, error) {
 	b := client.Bulk().Index(es.index).Type(es.docType)
 	for _, doc := range docs {
-		q := elastic.NewBulkIndexRequest().Doc(doc)
+		q := elasticv5.NewBulkIndexRequest().Doc(doc)
 		b.Add(q)
 	}
 	return client.Bulk().Do(es.ctx)
@@ -98,7 +98,7 @@ func (es *Elastic) Index(doc interface{}, id string) (string, error) {
 }
 
 func (es *Elastic) bulkIndex(doc interface{}, id string) error {
-	q := elastic.NewBulkIndexRequest().Index(es.index).Type(es.docType).Doc(doc)
+	q := elasticv5.NewBulkIndexRequest().Index(es.index).Type(es.docType).Doc(doc)
 	if id != "" {
 		q = q.Id(id)
 	}
@@ -121,7 +121,7 @@ func (es *Elastic) Update(doc interface{}, id string) error {
 }
 
 func (es *Elastic) bulkUpdate(doc interface{}, id string) error {
-	q := elastic.NewBulkUpdateRequest().Index(es.index).Type(es.docType).Doc(doc).Id(id)
+	q := elasticv5.NewBulkUpdateRequest().Index(es.index).Type(es.docType).Doc(doc).Id(id)
 	es.bulk.Add(q)
 
 	return es.execBulk()
@@ -147,10 +147,10 @@ func (es *Elastic) Get(id string, doc interface{}) error {
 }
 
 // GetMulti gets multiple elements from elasticsearch by id
-func (es *Elastic) GetMulti(ids ...string) (*elastic.MgetResponse, error) {
+func (es *Elastic) GetMulti(ids ...string) (*elasticv5.MgetResponse, error) {
 	g := client.Mget()
 	for _, id := range ids {
-		item := elastic.NewMultiGetItem().Index(es.index).Type(es.docType).Id(id)
+		item := elasticv5.NewMultiGetItem().Index(es.index).Type(es.docType).Id(id)
 		g.Add(item)
 	}
 	return g.Do(es.ctx)
@@ -166,7 +166,7 @@ func (es *Elastic) Delete(id string) (bool, error) {
 }
 
 // Search takes a json search string and executes it, returning the result
-func (es *Elastic) Search(json interface{}) (*elastic.SearchResult, error) {
+func (es *Elastic) Search(json interface{}) (*elasticv5.SearchResult, error) {
 	return client.Search(es.index).Type(es.docType).Source(json).Pretty(true).Do(es.ctx)
 }
 
@@ -232,7 +232,7 @@ func (es *Elastic) PutMapping() error {
 }
 
 // Aggregate executes aggregation(s) on the server
-func (es *Elastic) Aggregate(json interface{}) (*elastic.Aggregations, error) {
+func (es *Elastic) Aggregate(json interface{}) (*elasticv5.Aggregations, error) {
 	res, err := client.Search().Index(es.index).Type(es.docType).Source(json).
 		Pretty(true).Do(es.ctx)
 	if err != nil {
@@ -281,12 +281,12 @@ func (es *Elastic) newClient(elasticURLs []string) error {
 	}
 
 	log.Println("Opening new Elastic connection to", url)
-	cl, err := elastic.NewSimpleClient(elastic.SetURL(url...),
-		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
-		elastic.SetInfoLog(log.New(ioutil.Discard, "", log.LstdFlags)),
+	cl, err := elasticv5.NewSimpleClient(elasticv5.SetURL(url...),
+		elasticv5.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
+		elasticv5.SetInfoLog(log.New(ioutil.Discard, "", log.LstdFlags)),
 		// elastic.SetInfoLog(log.New(os.Stderr, "ELASTIC Info ", log.LstdFlags)),
 		// elastic.SetTraceLog(log.New(os.Stderr, "ELASTIC Trace ", log.LstdFlags)),
-		elastic.SetBasicAuth("elastic", "changeme"))
+		elasticv5.SetBasicAuth("elastic", "changeme"))
 	if err == nil {
 		client = cl
 	}
